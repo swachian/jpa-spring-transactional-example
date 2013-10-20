@@ -1,6 +1,4 @@
-package repositories;
-
-import hello.Customer;
+package hello;
 
 import java.util.List;
 

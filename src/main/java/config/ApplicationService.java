@@ -2,6 +2,7 @@ package config;
 
 import static org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType.H2;
 import hello.Customer;
+import hello.CustomerRepository;
 import hello.CustomerService;
 
 import java.util.List;
@@ -31,29 +32,49 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.annotation.Transactional;
 
-import repositories.CustomerRepository;
-
 @Configuration
-@Import(Application.class)
-@EnableTransactionManagement
+@EnableJpaRepositories("hello")
+@EnableTransactionManagement(proxyTargetClass = false)
 @ComponentScan("hello")
 public class ApplicationService {
 
-	@Autowired
-	DataSource dataSourceMy;
+	@Bean
+	public DataSource dataSourceMy() {
+		//http://fruzenshtein.com/spring-jpa-data-hibernate-mysql/
+		DriverManagerDataSource dataSource = new DriverManagerDataSource();
 
-	@Autowired
-	JpaVendorAdapter jpaVendorAdapter;
-	
+		dataSource.setDriverClassName("com.mysql.jdbc.Driver");
+		dataSource.setUrl("jdbc:mysql://192.168.137.102:3306/hibnatedb");
+		dataSource.setUsername("test");
+		dataSource.setPassword("test123");
+
+		return dataSource;
+	}
+
+	@Bean
+	public JpaTransactionManager transactionManager(EntityManagerFactory emf) {
+		return new JpaTransactionManager(emf);
+	}
+
+	@Bean
+	public JpaVendorAdapter jpaVendorAdapter() {
+		HibernateJpaVendorAdapter jpaVendorAdapter = new HibernateJpaVendorAdapter();
+		jpaVendorAdapter.setDatabase(Database.MYSQL);
+		jpaVendorAdapter.setGenerateDdl(true);
+		jpaVendorAdapter.setShowSql(true);
+		return jpaVendorAdapter;
+	}
+
+
 	@Bean
 	public LocalContainerEntityManagerFactoryBean entityManagerFactory() {
 		LocalContainerEntityManagerFactoryBean lemfb = new LocalContainerEntityManagerFactoryBean();
-		lemfb.setDataSource(dataSourceMy);
-		lemfb.setJpaVendorAdapter(jpaVendorAdapter);
+		lemfb.setDataSource(dataSourceMy());
+		lemfb.setJpaVendorAdapter(jpaVendorAdapter());
+		//lemfb.setPackagesToScan("repositories");
 		lemfb.setPackagesToScan("hello");
 		return lemfb;
 	}
-
 	public static void main(String[] args) {
 		AbstractApplicationContext context = new AnnotationConfigApplicationContext(
 				ApplicationService.class);
